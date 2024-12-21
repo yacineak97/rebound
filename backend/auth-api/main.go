@@ -7,11 +7,16 @@ import (
 	"auth-api/middleware"
 	"fmt"
 	"log"
+	"net"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+var httpPort = ":8080"
+var httpsPort = ":8443"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -52,7 +57,29 @@ func main() {
 
 	r.POST("/delete-cookie", handlers.DeleteCookieHandler)
 
-	if err := r.Run(":8080"); err != nil {
-		fmt.Println("Server failed to start:", err)
+	_, tlsPort, err := net.SplitHostPort(httpsPort)
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
+	go redirectToHTTPS(tlsPort)
+
+	if err := r.RunTLS(httpsPort, "certifs/cert.crt", "certifs/private.key"); err != nil {
+		log.Fatal("Failed to start HTTPS server: ", err)
+	}
+}
+
+func redirectToHTTPS(tlsPort string) {
+	httpSrv := http.Server{
+		Addr: httpPort,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			host, _, _ := net.SplitHostPort(r.Host)
+			u := r.URL
+			u.Host = net.JoinHostPort(host, tlsPort)
+			u.Scheme = "https"
+			log.Println(u.String())
+			http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
+		}),
+	}
+	log.Println(httpSrv.ListenAndServe())
 }
