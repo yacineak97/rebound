@@ -58,8 +58,8 @@ func Register(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, false, true)
-		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, false, true)
+		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, true, true)
+		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, true, true)
 		c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 	}
 }
@@ -100,8 +100,8 @@ func Login(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, false, true)
-		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, false, true)
+		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, true, true)
+		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, true, true)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Login successful",
@@ -142,8 +142,8 @@ func RefreshToken(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, false, true)
-		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, false, true)
+		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, true, true)
+		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, true, true)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Token refreshed successfully",
@@ -166,7 +166,7 @@ func DeleteCookieHandler(c *gin.Context) {
 
 	domain := config["domain"].(string)
 	// Deleting cookies by setting their max age to -1 and value to ""
-	c.SetCookie("access_token", "", -1, "/", domain, false, true)
-	c.SetCookie("refresh_token", "", -1, "/", domain, false, true)
+	c.SetCookie("access_token", "", -1, "/", domain, true, true)
+	c.SetCookie("refresh_token", "", -1, "/", domain, true, true)
 	c.String(http.StatusOK, "Cookies have been deleted")
 }
