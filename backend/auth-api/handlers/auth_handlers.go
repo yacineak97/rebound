@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"auth-api/config"
+	"auth-api/globals"
 	"auth-api/hash"
 	"auth-api/models"
 	"auth-api/utils"
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +16,16 @@ import (
 
 func Register(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		config, err := config.LoadConfig(globals.ConfigFilePath)
+		if err != nil {
+			log.Println("Error loading config file:", err)
+			return
+		}
+
+		accessTokenExpiration := config["access_token_expiration"].(int)
+		refreshTokenExpiration := config["refresh_token_expiration"].(int)
+		domain := config["domain"].(string)
+
 		var input models.User
 		if err := c.ShouldBindJSON(&input); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
@@ -20,7 +33,7 @@ func Register(db *sql.DB) gin.HandlerFunc {
 		}
 
 		var existingUser models.User
-		err := db.QueryRow("SELECT id, username, email FROM users WHERE username=$1 OR email=$2", input.Username, input.Email).Scan(&existingUser.ID, &existingUser.Username, &existingUser.Email)
+		err = db.QueryRow("SELECT id, username, email FROM users WHERE username=$1 OR email=$2", input.Username, input.Email).Scan(&existingUser.ID, &existingUser.Username, &existingUser.Email)
 		if err == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Username or Email already taken"})
 			return
@@ -45,15 +58,24 @@ func Register(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"access_token":  accessToken,
-			"refresh_token": refreshToken,
-		})
+		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, false, true)
+		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, false, true)
+		c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 	}
 }
 
 func Login(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		config, err := config.LoadConfig(globals.ConfigFilePath)
+		if err != nil {
+			log.Println("Error loading config file:", err)
+			return
+		}
+
+		accessTokenExpiration := config["access_token_expiration"].(int)
+		refreshTokenExpiration := config["refresh_token_expiration"].(int)
+		domain := config["domain"].(string)
+
 		var input models.User
 		if err := c.ShouldBindJSON(&input); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
@@ -61,7 +83,7 @@ func Login(db *sql.DB) gin.HandlerFunc {
 		}
 
 		var user models.User
-		err := db.QueryRow("SELECT id, username, email, password FROM users WHERE email=$1", input.Email).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+		err = db.QueryRow("SELECT id, username, email, password FROM users WHERE email=$1", input.Email).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
@@ -78,15 +100,27 @@ func Login(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, false, true)
+		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, false, true)
+
 		c.JSON(http.StatusOK, gin.H{
-			"access_token":  accessToken,
-			"refresh_token": refreshToken,
+			"message": "Login successful",
 		})
 	}
 }
 
 func RefreshToken(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		config, err := config.LoadConfig(globals.ConfigFilePath)
+		if err != nil {
+			log.Println("Error loading config file:", err)
+			return
+		}
+
+		accessTokenExpiration := config["access_token_expiration"].(int)
+		refreshTokenExpiration := config["refresh_token_expiration"].(int)
+		domain := config["domain"].(string)
+
 		var input struct {
 			RefreshToken string `json:"refresh_token"`
 		}
@@ -108,14 +142,31 @@ func RefreshToken(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		c.SetCookie("access_token", accessToken, accessTokenExpiration, "/", domain, false, true)
+		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, false, true)
+
 		c.JSON(http.StatusOK, gin.H{
-			"access_token":  accessToken,
-			"refresh_token": refreshToken,
+			"message": "Token refreshed successfully",
 		})
+
 	}
 }
 
 func Protected(c *gin.Context) {
 	userID := int(c.MustGet("user_id").(float64))
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Welcome, user %d!", userID)})
+}
+
+func DeleteCookieHandler(c *gin.Context) {
+	config, err := config.LoadConfig(globals.ConfigFilePath)
+	if err != nil {
+		log.Println("Error loading config file:", err)
+		return
+	}
+
+	domain := config["domain"].(string)
+	// Deleting cookies by setting their max age to -1 and value to ""
+	c.SetCookie("access_token", "", -1, "/", domain, false, true)
+	c.SetCookie("refresh_token", "", -1, "/", domain, false, true)
+	c.String(http.StatusOK, "Cookies have been deleted")
 }

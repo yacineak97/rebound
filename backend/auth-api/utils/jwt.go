@@ -6,16 +6,28 @@ import (
 	"os"
 	"time"
 
+	"auth-api/config"
+	"auth-api/globals"
+
 	"github.com/dgrijalva/jwt-go"
 )
 
 var secretKey = []byte(os.Getenv("SECRET_KEY"))
 
 func GenerateJWT(userID int) (string, string, error) {
+	config, err := config.LoadConfig(globals.ConfigFilePath)
+	if err != nil {
+		log.Println("Error loading config file:", err)
+		return "", "", err
+	}
+
+	accessTokenExpiration := config["access_token_expiration"].(int)
+	refreshTokenExpiration := config["refresh_token_expiration"].(int)
+
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 	accessTokenClaims := accessToken.Claims.(jwt.MapClaims)
 	accessTokenClaims["user_id"] = userID
-	accessTokenClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+	accessTokenClaims["exp"] = time.Now().Add(time.Second * time.Duration(accessTokenExpiration)).Unix()
 
 	accessTokenString, err := accessToken.SignedString(secretKey)
 	if err != nil {
@@ -26,7 +38,7 @@ func GenerateJWT(userID int) (string, string, error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	refreshTokenClaims := refreshToken.Claims.(jwt.MapClaims)
 	refreshTokenClaims["user_id"] = userID
-	refreshTokenClaims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+	refreshTokenClaims["exp"] = time.Now().Add(time.Second * time.Duration(refreshTokenExpiration)).Unix()
 
 	refreshTokenString, err := refreshToken.SignedString(secretKey)
 	if err != nil {
