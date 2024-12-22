@@ -1,6 +1,6 @@
 // config-overrides.js
-import { alias, configPaths, aliasJest } from 'react-app-rewire-alias';
+const { alias, configPaths, aliasJest } = require('react-app-rewire-alias');
 
 const aliasMap = configPaths('./tsconfig.paths.json');
-export default alias(aliasMap);
-export const jest = aliasJest(aliasMap);
+module.exports = alias(aliasMap);
+module.exports.jest = aliasJest(aliasMap);
