@@ -71,10 +71,10 @@ func Register(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.SetSameSite(http.SameSiteNoneMode)
-		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, true, true)
+		c.SetCookie("refreshToken", refreshToken, refreshTokenExpiration, "/", domain, true, true)
 
 		c.JSON(http.StatusOK, gin.H{
-			"access_token": accessToken,
+			"accessToken": accessToken,
 		})
 	}
 }
@@ -127,17 +127,17 @@ func Login(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.SetSameSite(http.SameSiteNoneMode)
-		c.SetCookie("refresh_token", refreshToken, refreshTokenExpiration, "/", domain, true, true)
+		c.SetCookie("refreshToken", refreshToken, refreshTokenExpiration, "/", domain, true, true)
 
 		c.JSON(http.StatusOK, gin.H{
-			"access_token": accessToken,
+			"accessToken": accessToken,
 		})
 	}
 }
 
 func RefreshToken(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		refreshToken, err := c.Cookie("refresh_token")
+		refreshToken, err := c.Cookie("refreshToken")
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token found in cookie"})
 			return
@@ -157,7 +157,7 @@ func RefreshToken(db *sql.DB) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"access_token": accessToken,
+			"accessToken": accessToken,
 		})
 	}
 }
@@ -184,7 +184,6 @@ func DeleteCookieHandler(c *gin.Context) {
 
 	c.SetSameSite(http.SameSiteNoneMode)
 	// Deleting cookies by setting their max age to -1 and value to ""
-	c.SetCookie("access_token", "", -1, "/", domain, true, true)
-	c.SetCookie("refresh_token", "", -1, "/", domain, true, true)
+	c.SetCookie("refreshToken", "", -1, "/", domain, true, true)
 	c.String(http.StatusOK, "Cookies have been deleted")
 }
