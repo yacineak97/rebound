@@ -14,16 +14,14 @@ import (
 
 var secretKey = []byte(os.Getenv("SECRET_KEY"))
 
-func GenerateJWT(userID int) (string, string, error) {
+func GenerateAccessToken(userID int) (string, error) {
 	config, err := config.LoadConfig(globals.ConfigFilePath)
 	if err != nil {
 		log.Println("Error loading config file:", err)
-		return "", "", err
+		return "", err
 	}
 
 	accessTokenExpiration := config["access_token_expiration"].(int)
-	refreshTokenExpiration := config["refresh_token_expiration"].(int)
-
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 	accessTokenClaims := accessToken.Claims.(jwt.MapClaims)
 	accessTokenClaims["user_id"] = userID
@@ -32,9 +30,20 @@ func GenerateJWT(userID int) (string, string, error) {
 	accessTokenString, err := accessToken.SignedString(secretKey)
 	if err != nil {
 		log.Println("Error signing the access token:", err)
-		return "", "", err
+		return "", err
 	}
 
+	return accessTokenString, nil
+}
+
+func GenerateRefreshToken(userID int) (string, error) {
+	config, err := config.LoadConfig(globals.ConfigFilePath)
+	if err != nil {
+		log.Println("Error loading config file:", err)
+		return "", err
+	}
+
+	refreshTokenExpiration := config["refresh_token_expiration"].(int)
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	refreshTokenClaims := refreshToken.Claims.(jwt.MapClaims)
 	refreshTokenClaims["user_id"] = userID
@@ -43,10 +52,10 @@ func GenerateJWT(userID int) (string, string, error) {
 	refreshTokenString, err := refreshToken.SignedString(secretKey)
 	if err != nil {
 		log.Println("Error signing the refresh token:", err)
-		return "", "", err
+		return "", err
 	}
 
-	return accessTokenString, refreshTokenString, nil
+	return refreshTokenString, nil
 }
 
 func VerifyToken(tokenString string) (jwt.MapClaims, error) {
