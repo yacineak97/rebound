@@ -47,7 +47,7 @@ func main() {
 	{
 		authRoutes.POST("/register", handlers.Register(db))
 		authRoutes.POST("/login", handlers.Login(db))
-		authRoutes.POST("/refresh", handlers.RefreshToken(db))
+		authRoutes.POST("/refreshToken", handlers.RefreshToken(db))
 	}
 
 	protectedRoutes := r.Group("/protected")
