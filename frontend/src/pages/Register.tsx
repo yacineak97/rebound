@@ -7,9 +7,7 @@ import {
   Avatar,
   Box,
   Button,
-  Checkbox,
   Container,
-  FormControlLabel,
   Grid2,
   Link,
   Paper,
@@ -22,28 +20,49 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { FormInputText } from '@components/form-components/FormInputText';
 
-const validationLoginSchema = Yup.object({
+const validationRegisterSchema = Yup.object({
+  firstName: Yup.string().required('First Name is Required'),
+  lastName: Yup.string().required('Last Name is Required'),
   email: Yup.string()
     .required('Email is Required')
     .email('Invalid email format'),
-  password: Yup.string().required('Password is required'),
+
+  password: Yup.string()
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(
+      /[!@#$%^&*(),.?":{}|<>]/,
+      'Password must contain at least one symbol'
+    )
+    .matches(/[0-9]/, 'Password must contain at least one number')
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords must match')
+    .required('Confirm password is required'),
 });
 
 type FormLoginTypes = {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
+  confirmPassword: string;
 };
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const [errorLoginApi, setErrorLoginApi] = useState<string | null>(null);
   const navigate = useNavigate();
   const { setAccessToken } = useAuth();
   const { control, handleSubmit, watch } = useForm<FormLoginTypes>({
     defaultValues: {
+      firstName: '',
+      lastName: '',
       email: '',
       password: '',
+      confirmPassword: '',
     },
-    resolver: yupResolver(validationLoginSchema),
+    resolver: yupResolver(validationRegisterSchema),
   });
 
   const onSubmit = async (data: FormLoginTypes) => {
@@ -78,7 +97,7 @@ const Login: React.FC = () => {
         <Avatar
           sx={{
             mx: 'auto',
-            // bgcolor: 'primary.main',
+            bgcolor: 'secondary.main',
             textAlign: 'center',
             mb: 1,
           }}
@@ -90,7 +109,7 @@ const Login: React.FC = () => {
           variant="h5"
           sx={{ textAlign: 'center', mb: 4 }}
         >
-          Sign In
+          Sign Up
         </Typography>
         <Box
           component="form"
@@ -98,31 +117,55 @@ const Login: React.FC = () => {
           noValidate
           sx={{ mt: 1 }}
         >
+          {/* First Name and Last Name on the Same Line */}
+          <Grid2 container spacing={2} sx={{ mb: 2 }}>
+            <Grid2 size={6}>
+              <FormInputText
+                label="First Name"
+                name="firstName"
+                control={control}
+                sx={{ mb: 2 }}
+                fullWidth
+                autoFocus
+                variant="outlined"
+              />
+            </Grid2>
+            <Grid2 size={6}>
+              <FormInputText
+                label="Last Name"
+                name="lastName"
+                control={control}
+                sx={{ mb: 2 }}
+                fullWidth
+                variant="outlined"
+              />
+            </Grid2>
+          </Grid2>
           <FormInputText
             label="Enter email"
             name="email"
             control={control}
             sx={{ mb: 2 }}
             fullWidth
-            autoFocus
           />
           <FormInputText
             label="Enter password"
             name="password"
             control={control}
-            sx={{ mb: 1 }}
-            fullWidth
-            autoFocus
-          />
-
-          <FormControlLabel
-            control={<Checkbox value="remember" color="primary" />}
-            label="Remember me"
             sx={{ mb: 2 }}
+            fullWidth
+            type="password"
           />
-
+          <FormInputText
+            label="Confirm password"
+            name="confirmPassword"
+            control={control}
+            sx={{ mb: 2 }}
+            fullWidth
+            type="password"
+          />
           <Button type="submit" variant="contained" fullWidth sx={{ mb: 2 }}>
-            Sign In
+            Sign Up
           </Button>
 
           {errorLoginApi && (
@@ -131,15 +174,10 @@ const Login: React.FC = () => {
             </Alert>
           )}
         </Box>
-        <Grid2 container justifyContent="space-between">
+        <Grid2 container justifyContent="flex-end">
           <Grid2>
-            <Link component={RouterLink} to="/forgot">
-              Forgot password?
-            </Link>
-          </Grid2>
-          <Grid2>
-            <Link component={RouterLink} to="/register">
-              Sign Up
+            <Link component={RouterLink} to="/login">
+              Sign In
             </Link>
           </Grid2>
         </Grid2>
@@ -148,4 +186,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;

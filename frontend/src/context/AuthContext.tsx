@@ -1,101 +1,113 @@
-// src/context/AuthContext.tsx
-import React, {
+import {
   createContext,
-  useContext,
   useState,
   ReactNode,
   useEffect,
+  useLayoutEffect,
 } from 'react';
-import {
-  loginUser,
-  logoutUser,
-  // refreshAccessToken,
-  getAccessTokenFromCookie,
-  getRefreshTokenFromCookie,
-} from '../services/authService';
+import axios, { axiosPrivate } from '@api/axios';
 
 interface AuthContextType {
   accessToken: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
-  login: (username: string, password: string) => void;
-  logout: () => void;
-  refresh: () => void;
+  setAccessToken: (token: string | null) => void;
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Get tokens from cookies when the app loads
-    const token = getAccessTokenFromCookie();
-    const refresh = getRefreshTokenFromCookie();
-    if (token && refresh) {
-      setAccessToken(token);
-      setRefreshToken(refresh);
-      setIsAuthenticated(true);
-    }
+    const controller = new AbortController();
+    const fetchToken = async () => {
+      try {
+        const response = await axiosPrivate.post('/auth/refreshToken', {
+          signal: controller.signal,
+        });
+        setLoading(false);
+        setAccessToken(response.data.accessToken);
+      } catch (err) {
+        console.log(err);
+        setLoading(false);
+        setAccessToken(null);
+      }
+    };
+
+    fetchToken();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
-  const login = async (username: string, password: string) => {
-    try {
-      await loginUser(username, password);
-      const token = getAccessTokenFromCookie();
-      const refresh = getRefreshTokenFromCookie();
-      setAccessToken(token);
-      setRefreshToken(refresh);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Login failed:', error);
-      setIsAuthenticated(false);
-    }
-  };
+  useLayoutEffect(() => {
+    const authInterceptor = axiosPrivate.interceptors.request.use((config) => {
+      config.headers.Authorization =
+        !config._retry && accessToken
+          ? `Bearer ${accessToken}`
+          : config.headers.Authorization;
+      return config;
+    });
 
-  const logout = async () => {
-    await logoutUser();
-    setAccessToken(null);
-    setRefreshToken(null);
-    setIsAuthenticated(false);
-  };
+    return () => {
+      axiosPrivate.interceptors.request.eject(authInterceptor);
+    };
+  }, [accessToken]);
 
-  const refresh = async () => {
-    try {
-      // const data = await refreshAccessToken();
-      const newAccessToken = getAccessTokenFromCookie();
-      setAccessToken(newAccessToken);
-      setRefreshToken(getRefreshTokenFromCookie());
-    } catch (error) {
-      console.error('Failed to refresh token:', error);
-      setIsAuthenticated(false);
-    }
-  };
+  useLayoutEffect(() => {
+    const refreshInterceptor = axiosPrivate.interceptors.response.use(
+      (response) => {
+        return response;
+      },
+      async (error) => {
+        const originalRequest = error.config;
+        if (
+          error.response?.status === 401 &&
+          error.response?.statusText === 'Unauthorized' &&
+          !originalRequest._retry
+        ) {
+          try {
+            const response = await axios.post(
+              '/auth/refreshToken',
+              {},
+              {
+                headers: { 'Content-Type': 'application/json' },
+                withCredentials: true,
+              }
+            );
+
+            setAccessToken(response.data.accessToken);
+            originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
+            originalRequest._retry = true;
+
+            return axiosPrivate(originalRequest);
+          } catch (err) {
+            console.log(err);
+            setAccessToken(null);
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axiosPrivate.interceptors.response.eject(refreshInterceptor);
+    };
+  }, [accessToken]);
 
   return (
     <AuthContext.Provider
-      value={{
-        accessToken,
-        refreshToken,
-        isAuthenticated,
-        login,
-        logout,
-        refresh,
-      }}
+      value={{ accessToken, setAccessToken, loading, setLoading }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export default AuthContext;

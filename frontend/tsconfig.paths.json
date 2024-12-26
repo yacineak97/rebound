@@ -4,7 +4,7 @@
     "paths": {
       "@assets/*": ["src/assets/*"],
       "@components/*": ["src/components/*"],
-      "@conetxt/*": ["src/conetxt/*"],
+      "@context/*": ["src/context/*"],
       "@data/*": ["src/data/*"],
       "@features/*": ["src/features/*"],
       "@graphqlServices/*": ["src/graphql/*"],
@@ -14,7 +14,9 @@
       "@pages/*": ["src/pages/*"],
       "@services/*": ["src/services/*"],
       "@store/*": ["src/store/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/utils/*"],
+      "@api/*": ["src/api/*"],
+      "@routes/*": ["src/routes/*"]
     }
   }
 }
