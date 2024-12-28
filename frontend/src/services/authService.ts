@@ -1,16 +1,10 @@
-import { axiosPrivate } from '@api/axios';
+import axios, { axiosPrivate } from '@api/axios';
 
-const API_URL = 'http://localhost:8080';
-
-// Call login API
 export const loginUser = async (email: string, password: string) => {
   try {
     const response = await axiosPrivate.post(
-      `${API_URL}/auth/login`,
+      '/auth/login',
       { email, password },
-      {
-        withCredentials: true,
-      }
     );
 
     return response;
@@ -21,7 +15,20 @@ export const loginUser = async (email: string, password: string) => {
 
 export const logoutUser = async () => {
   try {
-    await axiosPrivate.post(`${API_URL}/delete-cookie`);
+    await axiosPrivate.post('/delete-cookie');
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
+
+export const registerUser = async (firstname: string, lastname: string, email: string, password: string) => {
+  try {
+    const response = await axiosPrivate.post(
+      '/auth/register',
+      { firstname, lastname, email, password },
+    );
+
+    return response;
   } catch (error) {
     return Promise.reject(error);
   }

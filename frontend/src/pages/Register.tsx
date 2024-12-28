@@ -1,5 +1,5 @@
 import { useAuth } from '@hooks/useAuth';
-import { loginUser } from '@services/authService';
+import { loginUser, registerUser } from '@services/authService';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -21,8 +21,8 @@ import * as Yup from 'yup';
 import { FormInputText } from '@components/form-components/FormInputText';
 
 const validationRegisterSchema = Yup.object({
-  firstName: Yup.string().required('First Name is Required'),
-  lastName: Yup.string().required('Last Name is Required'),
+  firstname: Yup.string().required('First Name is Required'),
+  lastname: Yup.string().required('Last Name is Required'),
   email: Yup.string()
     .required('Email is Required')
     .email('Invalid email format'),
@@ -43,8 +43,8 @@ const validationRegisterSchema = Yup.object({
 });
 
 type FormLoginTypes = {
-  firstName: string;
-  lastName: string;
+  firstname: string;
+  lastname: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -56,8 +56,8 @@ const Register: React.FC = () => {
   const { setAccessToken } = useAuth();
   const { control, handleSubmit, watch } = useForm<FormLoginTypes>({
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      firstname: '',
+      lastname: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -66,16 +66,16 @@ const Register: React.FC = () => {
   });
 
   const onSubmit = async (data: FormLoginTypes) => {
-    try {
-      const response = await loginUser(data.email, data.password);
+    try {      
+      const response = await registerUser(data.firstname, data.lastname, data.email, data.password);
       setAccessToken(response.data.accessToken);
       navigate('/dashboard');
     } catch (error: any) {
       if (
-        error?.response?.status === 401 &&
-        error?.response?.data?.error === 'Invalid credentials'
+        error?.response?.status === 400 &&
+        error?.response?.data?.error === 'Email already taken'
       ) {
-        setErrorLoginApi('Invalid email or password');
+        setErrorLoginApi('Email already taken');
       } else {
         setErrorLoginApi('An unexpected error occurred. Please try later.');
       }
@@ -118,11 +118,11 @@ const Register: React.FC = () => {
           sx={{ mt: 1 }}
         >
           {/* First Name and Last Name on the Same Line */}
-          <Grid2 container spacing={2} sx={{ mb: 2 }}>
+          <Grid2 container spacing={2}>
             <Grid2 size={6}>
               <FormInputText
                 label="First Name"
-                name="firstName"
+                name="firstname"
                 control={control}
                 sx={{ mb: 2 }}
                 fullWidth
@@ -133,7 +133,7 @@ const Register: React.FC = () => {
             <Grid2 size={6}>
               <FormInputText
                 label="Last Name"
-                name="lastName"
+                name="lastname"
                 control={control}
                 sx={{ mb: 2 }}
                 fullWidth

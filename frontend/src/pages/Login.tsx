@@ -113,6 +113,7 @@ const Login: React.FC = () => {
             sx={{ mb: 1 }}
             fullWidth
             autoFocus
+            type="password"
           />
 
           <FormControlLabel
