@@ -38,7 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-s
+
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 	r.Use(secureFunc())

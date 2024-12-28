@@ -16,7 +16,6 @@ import (
 
 func Register(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		var input models.User
 		if err := c.ShouldBindJSON(&input); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
@@ -24,9 +23,9 @@ func Register(db *sql.DB) gin.HandlerFunc {
 		}
 
 		var existingUser models.User
-		err := db.QueryRow("SELECT id, username, email FROM users WHERE username=$1 OR email=$2", input.Username, input.Email).Scan(&existingUser.ID, &existingUser.Username, &existingUser.Email)
+		err := db.QueryRow("SELECT id, firstname, lastname, email FROM users WHERE email=$1", input.Email).Scan(&existingUser.ID, &existingUser.FirstName, &existingUser.LastName, &existingUser.Email)
 		if err == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Username or Email already taken"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Email already taken"})
 			return
 		}
 
@@ -37,9 +36,10 @@ func Register(db *sql.DB) gin.HandlerFunc {
 		}
 
 		var newUser models.User
-		err = db.QueryRow("INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id", input.Username, input.Email, hashedPassword).Scan(&newUser.ID)
+		err = db.QueryRow("INSERT INTO users (firstname, lastname, email, password) VALUES ($1, $2, $3, $4) RETURNING id", input.FirstName, input.LastName, input.Email, hashedPassword).Scan(&newUser.ID)
+		
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error registering user"})
+			// c.JSON(http.StatusInternalServerError, gin.H{"error": "Error registering usersssss"})
 			return
 		}
 
@@ -88,7 +88,7 @@ func Login(db *sql.DB) gin.HandlerFunc {
 		}
 
 		var user models.User
-		err := db.QueryRow("SELECT id, username, email, password FROM users WHERE email=$1", input.Email).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+		err := db.QueryRow("SELECT id, firstname, lastname, email, password FROM users WHERE email=$1", input.Email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
