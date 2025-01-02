@@ -7,6 +7,9 @@ import NotFound from '@pages/NotFound';
 import { useAuth } from '@hooks/useAuth';
 import { useEffect } from 'react';
 import Register from '@pages/Register';
+import CircularProgress from '@mui/material/CircularProgress';
+import { Box } from '@mui/material';
+
 
 function AppRoutes() {
   const { loading, setLoading, accessToken, setAccessToken } = useAuth();
@@ -23,7 +26,18 @@ function AppRoutes() {
   }, [accessToken, setAccessToken]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
+        <CircularProgress size={80} />
+      </Box>
+    );
   }
 
   return (

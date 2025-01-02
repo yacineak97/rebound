@@ -97,7 +97,7 @@ const Register: React.FC = () => {
         <Avatar
           sx={{
             mx: 'auto',
-            bgcolor: 'secondary.main',
+            bgcolor: 'primary.main',
             textAlign: 'center',
             mb: 1,
           }}
@@ -176,7 +176,7 @@ const Register: React.FC = () => {
         </Box>
         <Grid2 container justifyContent="flex-end">
           <Grid2>
-            <Link component={RouterLink} to="/login">
+            <Link component={RouterLink} to="/login"  style={{ textDecoration: 'none' }}>
               Sign In
             </Link>
           </Grid2>

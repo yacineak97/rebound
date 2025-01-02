@@ -78,7 +78,7 @@ const Login: React.FC = () => {
         <Avatar
           sx={{
             mx: 'auto',
-            // bgcolor: 'primary.main',
+            bgcolor: 'primary.main',
             textAlign: 'center',
             mb: 1,
           }}
@@ -134,12 +134,12 @@ const Login: React.FC = () => {
         </Box>
         <Grid2 container justifyContent="space-between">
           <Grid2>
-            <Link component={RouterLink} to="/forgot">
+            <Link component={RouterLink} to="/forgot" style={{ textDecoration: 'none' }}>
               Forgot password?
             </Link>
           </Grid2>
           <Grid2>
-            <Link component={RouterLink} to="/register">
+            <Link component={RouterLink} to="/register" style={{ textDecoration: 'none' }}>
               Sign Up
             </Link>
           </Grid2>
